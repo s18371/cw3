@@ -11,7 +11,8 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cciczenia3.Controllers
 {
     [ApiController]
-    [Route("api/students")]
+    //[Route("api/students")]
+    [Route("api/student")]
     
     public class StudentsController : ControllerBase
     {
@@ -29,11 +30,10 @@ namespace Cciczenia3.Controllers
         }*/
         /*public IActionResult GetStudents(string orderby)
         {
-
             return Ok(_dbService.GetStudents());
         }*/
-        [HttpGet("{id}")]
-        public IActionResult GetStudents(int id)
+        [HttpGet]
+        public IActionResult GetStudents()
         {
             var result = new List<Student>();
             var resultEnr = new List<Enrollment>();
@@ -42,27 +42,52 @@ namespace Cciczenia3.Controllers
             using (SqlCommand com = new SqlCommand())
             {
                 com.Connection = con;
-                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = " + id + ")";// select * from students;
+                com.CommandText = "select * from student"; //"select * from Enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = '"+id+"')";
                 con.Open();
                 SqlDataReader dr = com.ExecuteReader();
                 while (dr.Read())
                 {
-                    /*var st = new Student();
+                    var st = new Student();
                     st.FirstName = dr["FirstName"].ToString();
                     st.LastName = dr["LastName"].ToString();
                     st.IndexNumber = dr["IndexNumber"].ToString();
-                    result.Add(st);*/
-                    var enrl = new Enrollment();
-                    enrl.IdEnrollment = (int)dr["IdEmrollment"];
+                    result.Add(st);
+                    /*var enrl = new Enrollment();
+                    enrl.IdEnrollment = (int)dr["IdEnrollment"];
                     enrl.Semester = (int)dr["Semester"];
                     enrl.IdStudy = (int)dr["IdStudy"];
                     enrl.date = dr["StartDate"].ToString();
-                    resultEnr.Add(enrl);
+                    resultEnr.Add(enrl);*/
                 }
             }
+            return Ok(result);
+        }
+        [HttpGet("{indexnumber}")]
+        public IActionResult GetStudent(string indexnumber)
+        {
+            var resultEnr = new List<Enrollment>();
 
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+             
+                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = @indexnumber)";
+                com.Parameters.AddWithValue("indexnumber", indexnumber);
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var enh = new Enrollment();
+                    enh.IdEnrollment = (int)dr["IdEnrollment"];
+                    enh.IdStudy = (int)dr["IdStudy"];
+                    enh.Semester = (int)dr["Semester"];
+                    enh.date = dr["StartDate"].ToString();
+                    resultEnr.Add(enh);
+                }
 
-            return Ok(resultEnr);
+            }
+                return Ok(resultEnr);
         }
         /*[HttpGet("{id}")]
         public IActionResult GetStudent(int id)
@@ -77,13 +102,13 @@ namespace Cciczenia3.Controllers
             }
             return NotFound("Nie znaleziono studenta");
         }*/
-        [HttpGet]
+        /*[HttpGet]
         public string GetStudents1(string orderBy)
         {
             return $"Kowalski, Malewski, Andrzejewski sortowanie={orderBy}";
             
 
-        }
+        }*/
         [HttpPost]
         public IActionResult CreateStudent(Student Student)
         {
