@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Cciczenia3.Controllers
 {
     [ApiController]
-    [Route("api/enrollments")]
+    
     public class EnrollmentsController : ControllerBase
     {
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
@@ -24,6 +24,7 @@ namespace Cciczenia3.Controllers
             _dbService = dbService;
         }
         [HttpPost]
+        [Route("api/enrollments")]
         public IActionResult NewStudent(Student student)
         {
             if (!ModelState.IsValid)
@@ -128,6 +129,7 @@ namespace Cciczenia3.Controllers
                             st.StartDate = DateTime.Now;
                             com.CommandText = "insert into Enrollment(idEnrollment,Semester,IdStudy,StartDate)" +
                                                 "values(" + @st.IdEnrollment + "," + 1 + "," + st.IdStudy + "," + st.StartDate + ")";
+                            //trans.Commit();
                         }
                         catch
                         {
@@ -145,34 +147,51 @@ namespace Cciczenia3.Controllers
             result.Add(st);
             return Created("", st);
         }
-
-        /*using (SqlConnection con = new SqlConnection(ConnString))
-        using (SqlCommand com = new SqlCommand())
+        [Route("api/enrollments/promotions")]
+        [HttpPost]
+        public IActionResult PostProm(PostProm request)
         {
-            com.Connection = con;
-            com.CommandText = "select max(idenrollment) kolumna from enrollment";
-            con.Open();
-            SqlDataReader dr = com.ExecuteReader();
-            if (dr.Read())
+            if (!ModelState.IsValid)
             {
-                st.IdEnrollment = (int)dr["kolumna"]+1;
-
+                var d = ModelState;
+                return BadRequest("!!!");
             }
+            var result = new List<Enrollment>();
+
+            if (request.Studies.Length==0 || request.Semester.ToString().Length==0 )
+            {
+                return BadRequest("Nie podano wszystkich danych");
+            }
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+
+                com.Connection = con;
+                con.Open();
+                //SqlTransaction tran = con.BeginTransaction();
+                //var tran = con.BeginTransaction();
+                com.CommandText = "select 1 kolumna from Enrollment where semester ="+request.Semester+" and idstudy = (select idstudy from studies where name ='"+request.Studies+"')";
+                com.Parameters.AddWithValue("semester", request.Semester);
+                com.Parameters.AddWithValue("name", request.Studies);
+                var dr = com.ExecuteReader();
+                int jest = 0;
+                if (dr.Read())
+                {
+                    jest = (int)dr["kolumna"];
+                }
+                if (jest == 0)
+                {
+                    return NotFound("nie znaleziono danycjh w tabeli enrolments");
+                }
+            }
+
+                    return Ok("ok");
         }
-        using (SqlConnection con = new SqlConnection(ConnString))
-        using (SqlCommand com = new SqlCommand())
-        {
-            com.Connection = con;
-            com.CommandText = "select indexNumber from students";
-            con.Open();
-            SqlDataReader dr = com.ExecuteReader();
-            if (dr.Read())
-            {
-                st.IdEnrollment = (int)dr["kolumna"];
 
-            }
-        }*/
-            
+
+
     }
+    
+
 }
 
