@@ -82,7 +82,7 @@ namespace Cciczenia3.Controllers
                     enh.IdEnrollment = (int)dr["IdEnrollment"];
                     enh.IdStudy = (int)dr["IdStudy"];
                     enh.Semester = (int)dr["Semester"];
-                    enh.date = dr["StartDate"].ToString();
+                    enh.StartDate = (DateTime)dr["StartDate"];
                     resultEnr.Add(enh);
                 }
 

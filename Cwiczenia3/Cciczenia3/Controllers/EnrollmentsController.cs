@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
@@ -25,6 +26,11 @@ namespace Cciczenia3.Controllers
         [HttpPost]
         public IActionResult NewStudent(Student student)
         {
+            if (!ModelState.IsValid)
+            {
+                var d = ModelState;
+                return BadRequest("!!!");
+            }
             var result = new List<Enrollment>();
 
             if (student.FirstName == null || student.IndexNumber == null || student.LastName == null || student.BirthDate == null || student.Studies == null)
@@ -35,37 +41,138 @@ namespace Cciczenia3.Controllers
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
             {
-                    com.Connection = con;
-                    com.CommandText = "select * from studies where name = '" + student.Studies + "'";
-                    con.Open();
-                    SqlDataReader dr = com.ExecuteReader();
-                    if (dr.Read())
-                    {
-                        st.IdStudy = (int)dr["idStudy"];
-                  
-                    }
-                    else {
-                        return BadRequest("Nie ma tego na liscie Studies");
-                    }
-            }
 
-            using (SqlConnection con = new SqlConnection(ConnString))
-            using (SqlCommand com = new SqlCommand())
-            {
                 com.Connection = con;
-                com.CommandText = "select max(idenrollment) kolumna from enrollment";
                 con.Open();
-                SqlDataReader dr = com.ExecuteReader();
+                //SqlTransaction tran = con.BeginTransaction();
+                //var tran = con.BeginTransaction();
+
+
+                st.IdStudy = 0;
+
+                com.CommandText = "select * from studies where name = '" + student.Studies + "'";
+                com.Parameters.AddWithValue("name", student.Studies);
+                var dr = com.ExecuteReader();
                 if (dr.Read())
                 {
-                    st.IdEnrollment = (int)dr["kolumna"];
+                    st.IdStudy = (int)dr["idStudy"];
 
                 }
+                else if (st.IdStudy == 0)
+                {
+
+                    //tran.Rollback();
+                    return BadRequest("Nie ma tego na liscie Studies");
+                }
+                dr.Close();
+                st.IdEnrollment = 0;
+                com.CommandText = "select idEnrollment from enrollment where semester=1 and idstudy =  (select idstudy from Studies where name ='" + student.Studies + "') and StartDate = (select max(StartDate) from enrollment where Semester = 1 and Idstudy = (select idStudy from studies where Name ='" + student.Studies + "'))";
+
+                //com.Parameters.AddWithValue("name", student.Studies);
+                var dr2 = com.ExecuteReader();
+                if (dr2.Read())
+                {
+                    st.IdEnrollment = (int)dr2["IdEnrollment"];
+                    
+                }
+                else if (st.IdEnrollment == 0)
+                {
+                    dr2.Close();
+                    var sprawdzenieEski = new List<string>();
+                    com.CommandText = "select indexNumber from students";
+                    var dr3 = com.ExecuteReader();
+                    while (dr3.Read())
+                    {
+                        string eska = dr3["indexNumber"].ToString();
+                        sprawdzenieEski.Add(eska);
+                    }
+                    
+                    int eskaUnik = 1;
+                    foreach (string es in sprawdzenieEski)
+                    {
+                        if (student.IndexNumber.Equals(es))
+                        {
+                            eskaUnik++;
+                        }
+                    }
+                    /*SqlTransaction trans = con.BeginTransaction();
+                    com.Transaction = trans;*/
+                    if (eskaUnik == 1)
+                    {
+                        SqlTransaction trans = con.BeginTransaction();
+                        com.Transaction = trans;
+                        try
+                        {
+
+                            st.StartDate = DateTime.Now;
+                            com.CommandText = "insert into Enrollment(idEnrollment,Semester,IdStudy,StartDate)" +
+                                                "values(" + @st.IdEnrollment + "," + 1 + "," + st.IdStudy + "," + st.StartDate + ")";
+                            com.ExecuteNonQuery();
+                            com.CommandText = "insert into student (IndexNumber, FirstName, LastName, BirthDate, IdEnrollment) values ('" + student.IndexNumber + "', '"
+                                        + student.FirstName + "', '" + student.LastName + "', '" + student.BirthDate.Split(".")[2] + "-" + student.BirthDate.Split(".")[1] + "-" + student.BirthDate.Split(".")[0] + "', (select max(IdEnrollment) from Enrollment));";
+                            com.ExecuteNonQuery();
+                            //trans.Commit();
+                        }
+                        catch
+                        {
+                            trans.Rollback();
+                            return BadRequest("Blad podczas transakcji");
+                        }
+                    }
+                    else
+                    {
+                        SqlTransaction trans = con.BeginTransaction();
+                        com.Transaction = trans;
+                        try
+                        {
+                            st.StartDate = DateTime.Now;
+                            com.CommandText = "insert into Enrollment(idEnrollment,Semester,IdStudy,StartDate)" +
+                                                "values(" + @st.IdEnrollment + "," + 1 + "," + st.IdStudy + "," + st.StartDate + ")";
+                        }
+                        catch
+                        {
+                            trans.Rollback();
+                            return BadRequest("Blad podczas transakcji");
+                        }
+                    }
+                }
+
             }
 
+
+            //st.StartDate = DateTime.Now;
             st.Semester = 1;
             result.Add(st);
-            return Ok(result);
+            return Created("", st);
         }
+
+        /*using (SqlConnection con = new SqlConnection(ConnString))
+        using (SqlCommand com = new SqlCommand())
+        {
+            com.Connection = con;
+            com.CommandText = "select max(idenrollment) kolumna from enrollment";
+            con.Open();
+            SqlDataReader dr = com.ExecuteReader();
+            if (dr.Read())
+            {
+                st.IdEnrollment = (int)dr["kolumna"]+1;
+
+            }
+        }
+        using (SqlConnection con = new SqlConnection(ConnString))
+        using (SqlCommand com = new SqlCommand())
+        {
+            com.Connection = con;
+            com.CommandText = "select indexNumber from students";
+            con.Open();
+            SqlDataReader dr = com.ExecuteReader();
+            if (dr.Read())
+            {
+                st.IdEnrollment = (int)dr["kolumna"];
+
+            }
+        }*/
+            
     }
 }
+
