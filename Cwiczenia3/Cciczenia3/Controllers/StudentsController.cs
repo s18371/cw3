@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Cciczenia3.DAL;
 using Cciczenia3.Models;
+using Cciczenia3.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,11 +18,12 @@ namespace Cciczenia3.Controllers
     public class StudentsController : ControllerBase
     {
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
-        private readonly IDbService _dbService;
+        //private readonly IDbService _dbService;
+        private readonly IStudentsDbService _IsDbService;
 
-        public StudentsController(IDbService dbService)
+        public StudentsController(IStudentsDbService IsDbService)
         {
-            _dbService = dbService;
+            _IsDbService = IsDbService;
         }
         /*public string GetStudents()
         {
@@ -35,7 +37,9 @@ namespace Cciczenia3.Controllers
         [HttpGet]
         public IActionResult GetStudents()
         {
-            var result = new List<Student>();
+            List<Student> lista = _IsDbService.GetStudents();
+            return Ok(lista);
+            /*var result = new List<Student>();
             var resultEnr = new List<Enrollment>();
 
             using (SqlConnection con = new SqlConnection(ConnString))
@@ -52,20 +56,22 @@ namespace Cciczenia3.Controllers
                     st.LastName = dr["LastName"].ToString();
                     st.IndexNumber = dr["IndexNumber"].ToString();
                     result.Add(st);
-                    /*var enrl = new Enrollment();
-                    enrl.IdEnrollment = (int)dr["IdEnrollment"];
-                    enrl.Semester = (int)dr["Semester"];
-                    enrl.IdStudy = (int)dr["IdStudy"];
-                    enrl.date = dr["StartDate"].ToString();
-                    resultEnr.Add(enrl);*/
+                    //var enrl = new Enrollment();
+                    //enrl.IdEnrollment = (int)dr["IdEnrollment"];
+                    //enrl.Semester = (int)dr["Semester"];
+                    //enrl.IdStudy = (int)dr["IdStudy"];
+                    //enrl.date = dr["StartDate"].ToString();
+                    //resultEnr.Add(enrl);
                 }
             }
-            return Ok(result);
+            return Ok(result);*/
         }
         [HttpGet("{indexnumber}")]
         public IActionResult GetStudent(string indexnumber)
         {
-            var resultEnr = new List<Enrollment>();
+            List<Enrollment> lista = _IsDbService.GetStudent(indexnumber);
+            return Ok(lista);
+            /*var resultEnr = new List<Enrollment>();
 
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
@@ -87,7 +93,7 @@ namespace Cciczenia3.Controllers
                 }
 
             }
-                return Ok(resultEnr);
+                return Ok(resultEnr);*/
         }
         /*[HttpGet("{id}")]
         public IActionResult GetStudent(int id)

@@ -1,50 +1,87 @@
-﻿using System;
+﻿using Cciczenia3.Models;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using Cciczenia3.DAL;
-using Cciczenia3.Models;
-using Cciczenia3.Services;
-using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace Cciczenia3.Controllers
+namespace Cciczenia3.Services
 {
-    [ApiController]
-    
-    public class EnrollmentsController : ControllerBase
+    class SqlServerDbService : IStudentsDbService
     {
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
-        //private readonly IDbService _dbService;
-        private readonly IStudentsDbService _IsDbService;
 
-        public EnrollmentsController(IStudentsDbService IsDbService)
+        public List<Enrollment> GetStudent(string indexnumber)
         {
-            _IsDbService = IsDbService;
-        }
-        [HttpPost]
-        [Route("api/enrollments")]
-        public IActionResult NewStudent(Student student)
-        {
-            Enrollment enrl = _IsDbService.NewStudent(student);
-            if (enrl != null)
+            var resultEnr = new List<Enrollment>();
+
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
             {
-                return Created("", enrl);
+                com.Connection = con;
+
+                com.CommandText = "select * from enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = @indexnumber)";
+                com.Parameters.AddWithValue("indexnumber", indexnumber);
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var enh = new Enrollment();
+                    enh.IdEnrollment = (int)dr["IdEnrollment"];
+                    enh.IdStudy = (int)dr["IdStudy"];
+                    enh.Semester = (int)dr["Semester"];
+                    enh.StartDate = (DateTime)dr["StartDate"];
+                    resultEnr.Add(enh);
+                }
+
             }
-            return BadRequest("Nie podano wszystkich danych studenta lub nie ma tego na liscie studies");
+            return(resultEnr);
+        }
+
+        public List<Student> GetStudents()
+        {
+            var result = new List<Student>();
+            var resultEnr = new List<Enrollment>();
+
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+                com.CommandText = "select * from student"; //"select * from Enrollment where IdEnrollment = (select IdEnrollment from student where indexnumber = '"+id+"')";
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                while (dr.Read())
+                {
+                    var st = new Student();
+                    st.FirstName = dr["FirstName"].ToString();
+                    st.LastName = dr["LastName"].ToString();
+                    st.IndexNumber = dr["IndexNumber"].ToString();
+                    result.Add(st);
+                    /*var enrl = new Enrollment();
+                    enrl.IdEnrollment = (int)dr["IdEnrollment"];
+                    enrl.Semester = (int)dr["Semester"];
+                    enrl.IdStudy = (int)dr["IdStudy"];
+                    enrl.date = dr["StartDate"].ToString();
+                    resultEnr.Add(enrl);*/
+                }
+            }
+            return (result);
+        }
+
+        public Enrollment NewStudent(Student student)
+        {
             /*if (!ModelState.IsValid)
             {
                 var d = ModelState;
                 return BadRequest("!!!");
-            }
+            }*/
             var result = new List<Enrollment>();
 
             if (student.FirstName == null || student.IndexNumber == null || student.LastName == null || student.BirthDate == null || student.Studies == null)
             {
-                return BadRequest("Nie podano wszystkich danych studenta");
+                return null;// BadRequest("Nie podano wszystkich danych studenta");
             }
             var st = new Enrollment();
             using (SqlConnection con = new SqlConnection(ConnString))
@@ -71,7 +108,7 @@ namespace Cciczenia3.Controllers
                 {
 
                     //tran.Rollback();
-                    return BadRequest("Nie ma tego na liscie Studies");
+                    return null;// BadRequest("Nie ma tego na liscie Studies");
                 }
                 dr.Close();
                 st.IdEnrollment = 0;
@@ -82,7 +119,7 @@ namespace Cciczenia3.Controllers
                 if (dr2.Read())
                 {
                     st.IdEnrollment = (int)dr2["IdEnrollment"];
-                    
+
                 }
                 else if (st.IdEnrollment == 0)
                 {
@@ -95,7 +132,7 @@ namespace Cciczenia3.Controllers
                         string eska = dr3["indexNumber"].ToString();
                         sprawdzenieEski.Add(eska);
                     }
-                    
+
                     int eskaUnik = 1;
                     foreach (string es in sprawdzenieEski)
                     {
@@ -104,8 +141,8 @@ namespace Cciczenia3.Controllers
                             eskaUnik++;
                         }
                     }
-                    //SqlTransaction trans = con.BeginTransaction();
-                    //com.Transaction = trans;
+                    /*SqlTransaction trans = con.BeginTransaction();
+                    com.Transaction = trans;*/
                     if (eskaUnik == 1)
                     {
                         SqlTransaction trans = con.BeginTransaction();
@@ -125,7 +162,7 @@ namespace Cciczenia3.Controllers
                         catch
                         {
                             trans.Rollback();
-                            return BadRequest("Blad podczas transakcji");
+                            return null;// BadRequest("Blad podczas transakcji");
                         }
                     }
                     else
@@ -142,7 +179,7 @@ namespace Cciczenia3.Controllers
                         catch
                         {
                             trans.Rollback();
-                            return BadRequest("Blad podczas transakcji");
+                            return null;// BadRequest("Blad podczas transakcji");
                         }
                     }
                 }
@@ -153,28 +190,21 @@ namespace Cciczenia3.Controllers
             //st.StartDate = DateTime.Now;
             st.Semester = 1;
             result.Add(st);
-            return Created("", st);*/
+            return st;
         }
-        [Route("api/enrollments/promotions")]
-        [HttpPost]
-        public IActionResult PostProm(PostProm request)
+
+        public Enrollment PostProm(PostProm request)
         {
-            Enrollment enrl = _IsDbService.PostProm(request);
-            if (enrl != null)
-            {
-                return Created("", enrl);
-            }
-            return NotFound("nie znaleziono danycjh w tabeli enrolments");
             /*if (!ModelState.IsValid)
             {
                 var d = ModelState;
                 return BadRequest("!!!");
-            }
+            }*/
             var result = new List<Enrollment>();
 
-            if (request.Studies.Length==0 || request.Semester.ToString().Length==0 )
+            if (request.Studies.Length == 0 || request.Semester.ToString().Length == 0)
             {
-                return BadRequest("Nie podano wszystkich danych");
+                return null;//BadRequest("Nie podano wszystkich danych");
             }
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
@@ -184,7 +214,7 @@ namespace Cciczenia3.Controllers
                 con.Open();
                 //SqlTransaction tran = con.BeginTransaction();
                 //var tran = con.BeginTransaction();
-                com.CommandText = "select 1 kolumna from Enrollment where semester ="+request.Semester+" and idstudy = (select idstudy from studies where name ='"+request.Studies+"')";
+                com.CommandText = "select 1 kolumna from Enrollment where semester =" + request.Semester + " and idstudy = (select idstudy from studies where name ='" + request.Studies + "')";
                 com.Parameters.AddWithValue("semester", request.Semester);
                 com.Parameters.AddWithValue("name", request.Studies);
                 var dr = com.ExecuteReader();
@@ -195,7 +225,7 @@ namespace Cciczenia3.Controllers
                 }
                 if (jest == 0)
                 {
-                    return NotFound("nie znaleziono danycjh w tabeli enrolments");
+                    return null;//NotFound("nie znaleziono danycjh w tabeli enrolments");
                 }
                 dr.Close();
                 var trans = con.BeginTransaction();
@@ -213,24 +243,22 @@ namespace Cciczenia3.Controllers
                 dr = com.ExecuteReader();
                 if (dr.Read())
                 {
-                    enrol.IdEnrollment= (int)dr["IdEnrollment"];
+                    enrol.IdEnrollment = (int)dr["IdEnrollment"];
                     enrol.IdStudy = (int)dr["IdStudy"];
                     enrol.Semester = (int)dr["Semester"];
                     enrol.StartDate = (DateTime)dr["StartDate"];
                 }
                 dr.Close();
                 trans.Commit();
-                return Created("",enrol);
-                */
+                return enrol;//Created("", enrol);
+
+            }
+
         }
 
-                 
+        /*public IActionResult PutStudent(int id)
+        {
+            throw new NotImplementedException();
+        }*/
     }
-
-
-
 }
-    
-
-
-
