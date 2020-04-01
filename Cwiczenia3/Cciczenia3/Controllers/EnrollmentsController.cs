@@ -112,7 +112,7 @@ namespace Cciczenia3.Controllers
                             com.CommandText = "insert into student (IndexNumber, FirstName, LastName, BirthDate, IdEnrollment) values ('" + student.IndexNumber + "', '"
                                         + student.FirstName + "', '" + student.LastName + "', '" + student.BirthDate.Split(".")[2] + "-" + student.BirthDate.Split(".")[1] + "-" + student.BirthDate.Split(".")[0] + "', (select max(IdEnrollment) from Enrollment));";
                             com.ExecuteNonQuery();
-                            //trans.Commit();
+                            trans.Commit();
                         }
                         catch
                         {
@@ -129,7 +129,7 @@ namespace Cciczenia3.Controllers
                             st.StartDate = DateTime.Now;
                             com.CommandText = "insert into Enrollment(idEnrollment,Semester,IdStudy,StartDate)" +
                                                 "values(" + @st.IdEnrollment + "," + 1 + "," + st.IdStudy + "," + st.StartDate + ")";
-                            //trans.Commit();
+                            trans.Commit();
                         }
                         catch
                         {
@@ -183,9 +183,33 @@ namespace Cciczenia3.Controllers
                 {
                     return NotFound("nie znaleziono danycjh w tabeli enrolments");
                 }
+                dr.Close();
+                var trans = con.BeginTransaction();
+                com.Transaction = trans;
+
+                com.CommandText = "exec promotion @name2, @semester2";
+                com.Parameters.AddWithValue("semester2", request.Semester);
+                com.Parameters.AddWithValue("name2", request.Studies);
+                com.ExecuteNonQuery();
+                var enrol = new Enrollment();
+                com.CommandText = "select * from Enrollment join Studies on Enrollment.IdStudy = Studies.IdStudy where Semester = @semester3 +1 and Name = @name3";
+                com.Parameters.AddWithValue("semester3", request.Semester);
+                com.Parameters.AddWithValue("name3", request.Studies);
+
+                dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    enrol.IdEnrollment= (int)dr["IdEnrollment"];
+                    enrol.IdStudy = (int)dr["IdStudy"];
+                    enrol.Semester = (int)dr["Semester"];
+                    enrol.StartDate = (DateTime)dr["StartDate"];
+                }
+                dr.Close();
+                trans.Commit();
+                return Created("",enrol);
             }
 
-                    return Ok("ok");
+                 
         }
 
 
