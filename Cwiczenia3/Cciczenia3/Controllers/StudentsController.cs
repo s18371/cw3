@@ -69,6 +69,7 @@ namespace Cciczenia3.Controllers
         [HttpGet("{indexnumber}")]
         public IActionResult GetStudent(string indexnumber)
         {
+            //
             List<Enrollment> lista = _IsDbService.GetStudent(indexnumber);
             return Ok(lista);
             /*var resultEnr = new List<Enrollment>();
