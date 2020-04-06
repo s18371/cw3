@@ -12,5 +12,7 @@ namespace Cciczenia3.Services
         public Enrollment NewStudent(Student student);
         public List<Student> GetStudents();
         public List<Enrollment> GetStudent(string idnexnumber);
+
+        public string CheckStudent(string index);
     }
 }

@@ -17,6 +17,9 @@ namespace Cciczenia3.Controllers
     
     public class EnrollmentsController : ControllerBase
     {
+        /*Trochę pomieszalem pojecia i w mojej bazie w tabeli studies sa skroty przedmiotow
+         * np PPJ zamiast nazw studiow IT itp
+         */
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
         //private readonly IDbService _dbService;
         private readonly IStudentsDbService _IsDbService;

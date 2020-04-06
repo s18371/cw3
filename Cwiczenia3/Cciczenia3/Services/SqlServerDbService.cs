@@ -13,6 +13,26 @@ namespace Cciczenia3.Services
     {
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
 
+        public string CheckStudent(string index)
+        {
+            string indexStu = "";
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+
+                com.Connection = con;
+                com.CommandText = "select * from student where indexnumber = @indexnumber";
+                com.Parameters.AddWithValue("indexnumber", index);
+                con.Open();
+                SqlDataReader dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    indexStu = dr["IndexNumber"].ToString();
+                }
+            }
+            return indexStu;
+        }
+
         public List<Enrollment> GetStudent(string indexnumber)
         {
             var resultEnr = new List<Enrollment>();
