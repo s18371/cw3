@@ -13,6 +13,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 
 namespace Cciczenia3
 {
@@ -31,6 +32,10 @@ namespace Cciczenia3
             //services.AddSingleton<IDbService, MockBdService>();
             services.AddTransient<IStudentsDbService, SqlServerDbService>();
             services.AddControllers();
+            services.AddSwaggerGen(config =>
+            {
+                config.SwaggerDoc("v1", new OpenApiInfo { Title = ".Net StudentsApp API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,6 +45,11 @@ namespace Cciczenia3
             {
                 app.UseDeveloperExceptionPage();
             }
+            app.UseSwagger();
+            app.UseSwaggerUI(config =>
+            {
+                config.SwaggerEndpoint("/swagger/v1/swagger.json", ".Net StudentsApp API");
+            });
 
             app.Use(async (context, next) =>
             {
