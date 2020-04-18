@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cciczenia3.DAL;
 using Cciczenia3.Models;
 using Cciczenia3.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -30,6 +31,7 @@ namespace Cciczenia3.Controllers
         }
         [HttpPost]
         [Route("api/enrollments")]
+        [Authorize(Roles = "employee")]
         public IActionResult NewStudent(Student student)
         {
             Enrollment enrl = _IsDbService.NewStudent(student);
@@ -159,6 +161,7 @@ namespace Cciczenia3.Controllers
             return Created("", st);*/
         }
         [Route("api/enrollments/promotions")]
+        [Authorize(Roles = "employee")]
         [HttpPost]
         public IActionResult PostProm(PostProm request)
         {

@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 using Cciczenia3.DAL;
+using Cciczenia3.DTOs;
 using Cciczenia3.Models;
 using Cciczenia3.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Cciczenia3.Controllers
 {
@@ -17,6 +23,11 @@ namespace Cciczenia3.Controllers
     
     public class StudentsController : ControllerBase
     {
+        public IConfiguration Configuration { get; set; }
+        /*public StudentsController(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }*/
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
         //private readonly IDbService _dbService;
         private readonly IStudentsDbService _IsDbService;
@@ -116,12 +127,12 @@ namespace Cciczenia3.Controllers
             
 
         }*/
-        [HttpPost]
+        /*[HttpPost]
         public IActionResult CreateStudent(Student Student)
         {
             Student.IndexNumber = $"s{new Random().Next(1, 20000)}";
             return Ok(Student);
-        }
+        }*/
         [HttpPut("{id}")]
         public IActionResult PutStudent(int id)
         {
@@ -136,6 +147,51 @@ namespace Cciczenia3.Controllers
         {
             services.AddSingleton<IDbService, MockBdService>();
             services.AddControllers();
+        }
+        [HttpPost]
+        public IActionResult Login(LoginRequestDto request)
+        {
+            TokenResp resp = _IsDbService.Login(request);
+            if (resp != null)
+            {
+                return Ok(new
+                {
+
+                    token = resp.JWTtoken,
+                    refreshToken = resp.RefreshToken
+                });
+            }
+            else
+            {
+                return Unauthorized();
+            }
+            /*var claims = new[] 
+            {
+
+                new Claim(ClaimTypes.NameIdentifier,"1"),
+                new Claim(ClaimTypes.Name, "SK_adm"),
+                new Claim(ClaimTypes.Role, "admin"),
+                new Claim(ClaimTypes.Role, "student")
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken
+            (
+                issuer: "Gakko",
+                audience: "Students",
+                claims: claims,
+                expires: DateTime.Now.AddMinutes(10),
+                signingCredentials: creds
+            );
+            
+            
+            return Ok(new
+            {
+                token = new JwtSecurityTokenHandler().WriteToken(token),
+                refreshToken=Guid.NewGuid()
+            });*/
         }
     }
     

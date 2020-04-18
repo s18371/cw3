@@ -1,4 +1,5 @@
-﻿using Cciczenia3.Models;
+﻿using Cciczenia3.DTOs;
+using Cciczenia3.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,6 @@ namespace Cciczenia3.Services
         public List<Enrollment> GetStudent(string idnexnumber);
 
         public string CheckStudent(string index);
+        public TokenResp Login(LoginRequestDto req);
     }
 }

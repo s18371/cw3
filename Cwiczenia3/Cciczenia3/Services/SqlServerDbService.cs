@@ -1,17 +1,30 @@
-﻿using Cciczenia3.Models;
+﻿using Cciczenia3.DTOs;
+using Cciczenia3.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Text;
 using System.Threading.Tasks;
 
 
 namespace Cciczenia3.Services
 {
-    class SqlServerDbService : IStudentsDbService
+    public class SqlServerDbService : IStudentsDbService
     {
+        public IConfiguration Configuration { get; set; }
+
         private string ConnString = "Data Source=db-mssql;Initial Catalog=s18371;Integrated Security=True";
+
+        public SqlServerDbService(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
 
         public string CheckStudent(string index)
         {
@@ -274,6 +287,70 @@ namespace Cciczenia3.Services
 
             }
 
+        }
+
+        public TokenResp Login(LoginRequestDto req)
+        {
+            string login = "";
+            string haslo = "";
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+    
+            {
+                com.Connection = con;
+                con.Open();
+                com.CommandText = "select * from student where IndexNumber = @IndexNumber and password = @password";
+                com.Parameters.AddWithValue("IndexNumber", req.Login);
+                com.Parameters.AddWithValue("password", req.Haslo);
+                var dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    login = dr["IndexNumber"].ToString();
+                    haslo = dr["password"].ToString();
+                }
+                if(login!="" && haslo != "")
+                {
+                    var claims = new Claim[2];
+                    if (req.Login.Equals("s18371"))
+                    {
+                        claims = new[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, req.Login),
+                            new Claim(ClaimTypes.Role, "employee")
+                        };
+                    }
+                    else
+                    {
+                        claims = new[]
+                        {
+                        new Claim(ClaimTypes.NameIdentifier, req.Login),
+                        new Claim(ClaimTypes.Role, "student")
+                        };
+                    }
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var token = new JwtSecurityToken
+                    (
+                        issuer: "Gakko",
+                        audience: "Students",
+                        claims: claims,
+                        expires: DateTime.Now.AddMinutes(10),
+                        signingCredentials: creds
+                    );
+                    var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                    var refreshToken = Guid.NewGuid();
+                    var trok = new TokenResp();
+                    trok.JWTtoken = token2;
+                    trok.RefreshToken = refreshToken;
+                    return trok;
+
+                }
+                else
+                {
+                    return null;
+                }
+            }
+                throw new NotImplementedException();
         }
 
         /*public IActionResult PutStudent(int id)
