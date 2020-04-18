@@ -31,7 +31,8 @@ namespace Cciczenia3
         {
             //services.AddSingleton<IDbService, MockBdService>();
             services.AddTransient<IStudentsDbService, SqlServerDbService>();
-            services.AddControllers();
+            services.AddControllers()
+                    .AddXmlSerializerFormatters();
             services.AddSwaggerGen(config =>
             {
                 config.SwaggerDoc("v1", new OpenApiInfo { Title = ".Net StudentsApp API", Version = "v1" });
@@ -61,7 +62,7 @@ namespace Cciczenia3
                     await context.Response.WriteAsync("Nie podales indexu");
                 }
                 string index = context.Request.Headers["Index"].ToString();
-                //chceck in db
+                //check in db
                 string zwroconyIndex = isds.CheckStudent(index);
 
                 if (zwroconyIndex != index)
@@ -75,6 +76,8 @@ namespace Cciczenia3
             app.UseMiddleware<LoggingMiddleware>();
 
             app.UseRouting();
+
+            //app.UseAuthentication();
 
             app.UseAuthorization();
 
