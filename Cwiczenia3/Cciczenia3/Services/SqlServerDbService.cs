@@ -308,6 +308,7 @@ namespace Cciczenia3.Services
                     login = dr["IndexNumber"].ToString();
                     haslo = dr["password"].ToString();
                 }
+                dr.Close();
                 if(login!="" && haslo != "")
                 {
                     var claims = new Claim[2];
@@ -340,6 +341,12 @@ namespace Cciczenia3.Services
                     var token2 = new JwtSecurityTokenHandler().WriteToken(token);
                     var refreshToken = Guid.NewGuid();
                     var trok = new TokenResp();
+                    //using (SqlConnection con = new SqlConnection(ConnString))
+                    //using (SqlCommand com = new SqlCommand())
+                    com.CommandText = "update student set refreshToekn = @refreshToken where IndexNumber = @IndexNumber2";
+                    com.Parameters.AddWithValue("IndexNumber2", req.Login);
+                    com.Parameters.AddWithValue("refreshToken", refreshToken);
+                    com.ExecuteNonQuery();
                     trok.JWTtoken = token2;
                     trok.RefreshToken = refreshToken;
                     return trok;
@@ -351,6 +358,69 @@ namespace Cciczenia3.Services
                 }
             }
                 throw new NotImplementedException();
+        }
+
+        public RefreshTK RefreshTk(NewJTT req)
+        {
+            string indexnumber = "";
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                com.Connection = con;
+
+                con.Open();
+
+                com.CommandText = "select IndexNumber from student where refreshToekn = @rt;";
+                com.Parameters.AddWithValue("rt", req.RefreshToken);
+                var dr = com.ExecuteReader();
+                if (dr.Read())
+                {
+                    indexnumber = dr["IndexNumber"].ToString();
+                }
+                dr.Close();
+
+                if (indexnumber != "")
+                {
+                    var claims = new Claim[2];
+                    if (indexnumber.Equals("s18371"))
+                    {
+                        claims = new[]
+                        {
+                            new Claim(ClaimTypes.NameIdentifier, indexnumber),
+                            new Claim(ClaimTypes.Role, "employee")
+                        };
+                    }
+                    else
+                    {
+                        claims = new[]
+                        {
+                        new Claim(ClaimTypes.NameIdentifier, indexnumber),
+                        new Claim(ClaimTypes.Role, "student")
+                        };
+                    }
+                    var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
+                    var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                    var token = new JwtSecurityToken
+                    (
+                        issuer: "Gakko",
+                        audience: "Students",
+                        claims: claims,
+                        expires: DateTime.Now.AddMinutes(10),
+                        signingCredentials: creds
+                    );
+                    var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                    return (new RefreshTK
+                    {
+                        JwtToken = token2
+                    });
+                }
+                else
+                {
+                    return null;
+                }
+
+            }
+            //throw new NotImplementedException();
         }
 
         /*public IActionResult PutStudent(int id)

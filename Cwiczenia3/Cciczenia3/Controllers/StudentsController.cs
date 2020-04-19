@@ -156,7 +156,6 @@ namespace Cciczenia3.Controllers
             {
                 return Ok(new
                 {
-
                     token = resp.JWTtoken,
                     refreshToken = resp.RefreshToken
                 });
@@ -165,33 +164,19 @@ namespace Cciczenia3.Controllers
             {
                 return Unauthorized();
             }
-            /*var claims = new[] 
-            {
-
-                new Claim(ClaimTypes.NameIdentifier,"1"),
-                new Claim(ClaimTypes.Name, "SK_adm"),
-                new Claim(ClaimTypes.Role, "admin"),
-                new Claim(ClaimTypes.Role, "student")
-            };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken
-            (
-                issuer: "Gakko",
-                audience: "Students",
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(10),
-                signingCredentials: creds
-            );
             
-            
+        }
+        [Route("refresh")]
+        [HttpPost]
+        public IActionResult Refresh(NewJTT req)
+        {
+            RefreshTK resp = _IsDbService.RefreshTk(req);
             return Ok(new
             {
-                token = new JwtSecurityTokenHandler().WriteToken(token),
-                refreshToken=Guid.NewGuid()
-            });*/
+
+                token = resp.JwtToken
+                //refreshToken = resp.RefreshToken
+            }) ;
         }
     }
     
