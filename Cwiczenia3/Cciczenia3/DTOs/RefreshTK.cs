@@ -8,5 +8,6 @@ namespace Cciczenia3.DTOs
     public class RefreshTK
     {
         public string JwtToken { get; set; }
+        public Guid RefreshToken { get; set; }
     }
 }

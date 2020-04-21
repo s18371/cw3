@@ -174,8 +174,8 @@ namespace Cciczenia3.Controllers
             return Ok(new
             {
 
-                token = resp.JwtToken
-                //refreshToken = resp.RefreshToken
+                token = resp.JwtToken,
+                refreshToken = resp.RefreshToken
             }) ;
         }
     }

@@ -409,9 +409,15 @@ namespace Cciczenia3.Services
                         signingCredentials: creds
                     );
                     var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                    var refreshToken = Guid.NewGuid();
+                    com.CommandText = "update student set refreshToekn = @refreshToken where IndexNumber = @IndexNumber2";
+                    com.Parameters.AddWithValue("IndexNumber2", indexnumber);
+                    com.Parameters.AddWithValue("refreshToken", refreshToken);
+                    com.ExecuteNonQuery();
                     return (new RefreshTK
                     {
-                        JwtToken = token2
+                        JwtToken = token2,
+                        RefreshToken = refreshToken
                     });
                 }
                 else
