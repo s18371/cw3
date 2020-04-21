@@ -360,7 +360,7 @@ namespace Cciczenia3.Services
                 throw new NotImplementedException();
         }
 
-        public RefreshTK RefreshTk(NewJTT req)
+        public RefreshTK RefreshTk(string token)
         {
             string indexnumber = "";
             using (SqlConnection con = new SqlConnection(ConnString))
@@ -371,7 +371,7 @@ namespace Cciczenia3.Services
                 con.Open();
 
                 com.CommandText = "select IndexNumber from student where refreshToekn = @rt;";
-                com.Parameters.AddWithValue("rt", req.RefreshToken);
+                com.Parameters.AddWithValue("rt", token);
                 var dr = com.ExecuteReader();
                 if (dr.Read())
                 {
@@ -400,7 +400,7 @@ namespace Cciczenia3.Services
                     }
                     var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["SecretKey"]));
                     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-                    var token = new JwtSecurityToken
+                    var tokenNew = new JwtSecurityToken
                     (
                         issuer: "Gakko",
                         audience: "Students",
@@ -408,7 +408,7 @@ namespace Cciczenia3.Services
                         expires: DateTime.Now.AddMinutes(10),
                         signingCredentials: creds
                     );
-                    var token2 = new JwtSecurityTokenHandler().WriteToken(token);
+                    var token2 = new JwtSecurityTokenHandler().WriteToken(tokenNew);
                     var refreshToken = Guid.NewGuid();
                     com.CommandText = "update student set refreshToekn = @refreshToken where IndexNumber = @IndexNumber2";
                     com.Parameters.AddWithValue("IndexNumber2", indexnumber);

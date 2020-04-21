@@ -16,6 +16,6 @@ namespace Cciczenia3.Services
 
         public string CheckStudent(string index);
         public TokenResp Login(LoginRequestDto req);
-        public RefreshTK RefreshTk(NewJTT req);
+        public RefreshTK RefreshTk(string token);
     }
 }

@@ -166,14 +166,13 @@ namespace Cciczenia3.Controllers
             }
             
         }
-        [Route("refresh")]
+        [Route("refresh/{token}")]
         [HttpPost]
-        public IActionResult Refresh(NewJTT req)
+        public IActionResult Refresh(string token)
         {
-            RefreshTK resp = _IsDbService.RefreshTk(req);
+            RefreshTK resp = _IsDbService.RefreshTk(token);
             return Ok(new
             {
-
                 token = resp.JwtToken,
                 refreshToken = resp.RefreshToken
             }) ;
