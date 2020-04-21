@@ -177,6 +177,13 @@ namespace Cciczenia3.Controllers
                 refreshToken = resp.RefreshToken
             }) ;
         }
+        [Route("createSafePassword")]
+        [HttpPost]
+        public IActionResult CreatePassword(LoginRequestDto req)
+        {
+            string wynik = _IsDbService.CreatePassword(req);
+            return Ok(wynik);
+        }
     }
     
 }

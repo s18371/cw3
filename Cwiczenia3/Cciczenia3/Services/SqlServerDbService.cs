@@ -1,5 +1,6 @@
 ﻿using Cciczenia3.DTOs;
 using Cciczenia3.Models;
+using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,7 @@ using System.Data.SqlClient;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -291,25 +293,43 @@ namespace Cciczenia3.Services
 
         public TokenResp Login(LoginRequestDto req)
         {
+            string salt = "";
+            string hash = "";
+            string newSalt;
+            byte[] randomBytes = new byte[128 / 8];
+            using (var generator =RandomNumberGenerator.Create())
+            {
+                generator.GetBytes(randomBytes);
+                newSalt = Convert.ToBase64String(randomBytes);
+            }
             string login = "";
             string haslo = "";
+            //string salt = "";
+            
+            var valueBytes = KeyDerivation.Pbkdf2(
+                                password: req.Haslo,
+                                salt: Encoding.UTF8.GetBytes(newSalt),
+                                prf: KeyDerivationPrf.HMACSHA512,
+                                iterationCount: 40000,
+                                numBytesRequested: 256 / 8
+                                );
             using (SqlConnection con = new SqlConnection(ConnString))
             using (SqlCommand com = new SqlCommand())
-    
             {
                 com.Connection = con;
                 con.Open();
-                com.CommandText = "select * from student where IndexNumber = @IndexNumber and password = @password";
+                com.CommandText = "select * from student where IndexNumber = @IndexNumber";
                 com.Parameters.AddWithValue("IndexNumber", req.Login);
-                com.Parameters.AddWithValue("password", req.Haslo);
                 var dr = com.ExecuteReader();
                 if (dr.Read())
                 {
                     login = dr["IndexNumber"].ToString();
                     haslo = dr["password"].ToString();
+                    salt = dr["salt"].ToString();
                 }
                 dr.Close();
-                if(login!="" && haslo != "")
+                var good = IStudentsDbService.Validate(req.Haslo, salt, haslo);
+                if (good)
                 {
                     var claims = new Claim[2];
                     if (req.Login.Equals("s18371"))
@@ -429,9 +449,40 @@ namespace Cciczenia3.Services
             //throw new NotImplementedException();
         }
 
-        /*public IActionResult PutStudent(int id)
+        public string CreatePassword(LoginRequestDto req)
         {
-            throw new NotImplementedException();
-        }*/
+
+            string login = req.Login;
+            string haslo = req.Haslo;
+            string salt = IStudentsDbService.CreateSalt();
+            string pass = IStudentsDbService.Create(haslo, salt);
+
+            using (SqlConnection con = new SqlConnection(ConnString))
+            using (SqlCommand com = new SqlCommand())
+            {
+                con.Open();
+                SqlTransaction trans = con.BeginTransaction();
+                com.Connection = con;
+                com.Transaction = trans;
+                try
+                {
+                    com.CommandText = "update student set Salt = @salt, Password = @password where IndexNumber = @login";
+                    com.Parameters.AddWithValue("login", login);
+                    com.Parameters.AddWithValue("salt", salt);
+                    com.Parameters.AddWithValue("password", pass);
+                    com.ExecuteNonQuery();
+                    trans.Commit();
+                }
+                catch (Exception e)
+                {
+                    trans.Rollback();
+                    return "blad: " + e.ToString();
+                }
+
+
+            }
+
+            return "Ustawiono bezpieczne haslo";
+        }
     }
 }
