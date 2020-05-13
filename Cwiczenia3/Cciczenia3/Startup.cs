@@ -5,7 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Cciczenia3.DAL;
+using Cciczenia3.Models2;
 using Cciczenia3.Services;
+using Cciczenia3.Services2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -46,6 +48,8 @@ namespace Cciczenia3
                         };
                     });
             //services.AddSingleton<IDbService, MockBdService>();
+            services.AddScoped<IStudentsDbService2, EfDbService2>();
+            services.AddDbContext<s18371Context>();
             services.AddTransient<IStudentsDbService, SqlServerDbService>();
             services.AddControllers()
                     .AddXmlSerializerFormatters();
